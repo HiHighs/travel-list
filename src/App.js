@@ -27,6 +27,27 @@ export default function App() {
     setItems(newItems);
   }
 
+  function handleSortItems(sortBy) {
+    // slice() to make a copy first
+    if (sortBy === 'input') setItems(items.slice().sort((a, b) => a.id - b.id));
+
+    if (sortBy === 'description')
+      setItems(
+        items.sort((a, b) => a.description.localeCompare(b.description))
+      );
+
+    if (sortBy === 'packed') {
+      setItems(items.slice().sort((a, b) => a.packed - b.packed));
+    }
+  }
+
+  function handleClearList() {
+    const confirmed = window.confirm(
+      'Are you sure you want to clear the list?'
+    );
+    if (confirmed) setItems([]);
+  }
+
   return (
     <div className='app'>
       <Logo />
@@ -35,14 +56,16 @@ export default function App() {
         items={items}
         onRemoveItem={handleRemoveItem}
         onToggleItem={handleToggleItem}
+        onSortItems={handleSortItems}
+        onClearList={handleClearList}
       />
-      <Stats />
+      <Stats items={items} />
     </div>
   );
 }
 
 function Logo() {
-  return <h1>✈️ Vacation Time 🌴</h1>;
+  return <h1>✈️ Vacation 🌴</h1>;
 }
 
 function Form({ onAddItem }) {
@@ -89,7 +112,20 @@ function Form({ onAddItem }) {
   );
 }
 
-function PackList({ items, onRemoveItem, onToggleItem }) {
+function PackList({
+  items,
+  onRemoveItem,
+  onToggleItem,
+  onSortItems,
+  onClearList,
+}) {
+  const [sortBy, setSortBy] = useState('input');
+
+  function handleSortBy(sortBy) {
+    setSortBy(sortBy);
+    onSortItems(sortBy);
+  }
+
   return (
     <div className='list'>
       <ul>
@@ -102,6 +138,15 @@ function PackList({ items, onRemoveItem, onToggleItem }) {
           />
         ))}
       </ul>
+
+      <div className='actions'>
+        <select value={sortBy} onChange={(e) => handleSortBy(e.target.value)}>
+          <option value='input'>Sort by input order</option>
+          <option value='description'>Sort by description</option>
+          <option value='packed'>Sort by status</option>
+        </select>
+        <button onClick={onClearList}>Clear list</button>
+      </div>
     </div>
   );
 }
@@ -122,10 +167,27 @@ function Item({ item, onRemoveItem, onToggleItem }) {
   );
 }
 
-function Stats() {
+function Stats({ items }) {
+  if (items.length === 0)
+    return (
+      <footer className='stats'>
+        <em>Start by adding some items to your packing list! 👒</em>
+      </footer>
+    );
+
+  const numItems = items.length;
+  const numPacked = items.filter((i) => i.packed).length;
+  const percentage = Math.round((numPacked / numItems) * 100);
+
   return (
     <footer className='stats'>
-      <em>You have X items on your list, and you already packed X (X%) 🧳</em>
+      <em>
+        {percentage !== 100
+          ? `
+        You have ${numItems} items on your list, and you already packed
+        ${numPacked} (${percentage}%) 🧳`
+          : 'You have packed everything and are ready to go! 🌻'}
+      </em>
     </footer>
   );
 }
